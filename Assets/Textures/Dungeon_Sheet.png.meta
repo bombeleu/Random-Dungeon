@@ -18,10 +18,10 @@ TextureImporter:
     21300026: Dungeon_Sheet_13
     21300028: Dungeon_Sheet_14
     21300030: Dungeon_Sheet_15
-    21300032: Dungeon_Sheet_16
+    21300032: Empty
     21300034: Dungeon_Sheet_17
     21300036: Dungeon_Sheet_18
-    21300038: Dungeon_Sheet_19
+    21300038: Test
     21300040: Dungeon_Sheet_20
     21300042: Dungeon_Sheet_21
     21300044: Dungeon_Sheet_22
@@ -267,7 +267,7 @@ TextureImporter:
       alignment: 0
       pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: Dungeon_Sheet_16
+    - name: Empty
       rect:
         serializedVersion: 2
         x: 0
@@ -297,7 +297,7 @@ TextureImporter:
       alignment: 0
       pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: Dungeon_Sheet_19
+    - name: Test
       rect:
         serializedVersion: 2
         x: 48

@@ -2,17 +2,22 @@
 using System.Linq;
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+
 [CustomEditor(typeof(Dungeon))]
 public class DungeonEditor : Editor {
     
     public Dungeon dungeon;
-
+	public List<Vector2> cells =  new List<Vector2>();
 	private SpriteProvider spriteProvider;
    
+	private Dictionary<int,GameObject> tilePool = new Dictionary<int, GameObject>();
+	public int windingPercent = 70;
 	public int numRooms = 10;
 	public int roomExtraSize = 2;
 	public ArrayList rooms = new ArrayList();
 
+	public Stage stage;
 	public override void OnInspectorGUI(){
 
         GUILayout.BeginVertical();
@@ -62,12 +67,73 @@ public class DungeonEditor : Editor {
             i--;
         }
     }
+	void carve(Vector2 pos, TileType type) {
+		if (type == TileType.Ground){ 
+			type = TileType.Ground;
 
+		stage.tileType[(int)pos.x,(int)pos.y] = type;
+		}
+		//_regions[pos] = _currentRegion;
+	}
+	bool canCarve(Vector2 pos,Vector2 dir){
+		if(pos.x + dir.x * 3 >= stage.size.x || pos.x + dir.x *3 <= 0 || pos.y + dir.y * 3 >= stage.size.y || pos.y + dir.y * 3<= 0)
+			return false;
+
+		return stage.tileType[(int)(pos.x + dir.x +dir.x),(int)(pos.y + dir.y +dir.y)] == TileType.Empty;
+
+
+	}
+	void growMaze (Vector2 start)
+	{
+		 Vector2 lastDir = new Vector2(-1,-1);
+
+		
+		//_startRegion();
+		carve(start,TileType.Ground);
+		
+		cells.Add(start);
+		while (cells.Count != 0) {
+			Vector2 cell = cells[cells.Count-1];
+
+			// See which adjacent cells are open.
+			List<Vector2> unmadeCells = new List<Vector2>();
+			Vector2[] directions = Directions.cardinal;
+			for (int i = 0; i < directions.Length; i++) {
+					if(canCarve(cell,directions[i]))
+						unmadeCells.Add(directions[i]);
+			}
+			//Debug.Log(1);
+			if(unmadeCells.Count !=0){
+				Vector2 dir;
+				Debug.Log(2);
+				Debug.Log(unmadeCells.Contains(lastDir));
+				if(unmadeCells.Contains(lastDir) && Random.Range(0,101)> windingPercent){
+					dir = lastDir;
+				}else{
+					dir = unmadeCells[Random.Range(0,unmadeCells.Count)];
+				}
+				carve(new Vector2(cell.x + dir.x,cell.y + dir.y),TileType.Ground);
+				carve(new Vector2(cell.x + dir.x + dir.x ,cell.y + dir.y + dir.y),TileType.Ground);
+				cells.Add(new Vector2(dir.x+dir.x,dir.y+dir.y));
+				lastDir = dir;
+			}else{
+
+				cells.RemoveAt(cells.Count-1);
+
+
+				lastDir =  new Vector2(-1,-1);
+			}
+
+		}
+
+	}
 
     void BuildDungeon()
     {
+		rooms = new ArrayList();
+
 		SpriteProvider spriteProvider = new SpriteProvider(AssetDatabase.GetAssetPath(dungeon.texture2D));
-		Stage stage = new Stage(dungeon.size);
+		stage = new Stage(dungeon.size);
 		stage.FillStage();
 
 		AddRooms();
@@ -75,12 +141,14 @@ public class DungeonEditor : Editor {
 			stage.AddRoom(room);
 		}
 
+		for (int i = 0; i < dungeon.size.y; i++) {
+			for (int j = 0; j < dungeon.size.x; j++) {
+				if(stage.tileType[j,i]!=TileType.Test)
+					continue;
+				growMaze(new Vector2(j,i));
 
-
-
-
-
-
+			}
+		}
 
 
 
@@ -91,11 +159,23 @@ public class DungeonEditor : Editor {
 		float y = 0, x = 0;
 		for (int i = 0; i < dungeon.size.y; i++) {
 			for (int j = 0; j < dungeon.size.x; j++) {
-				Tile tile = Tile.CreateTile((TileType)stage.tileType[i,j],new Vector2(x, y),spriteProvider);
-				tile.id = index++;
-				x += tile.tileSize.x;
+				GameObject ob;
+				tilePool.TryGetValue(index,out ob);
+				if (ob==null)
+				{
+					Tile tile = Tile.CreateTile((TileType)stage.tileType[j,i],new Vector2(x, y),spriteProvider,index);
+					tile.gameObject.transform.parent = dungeon.transform;
+					tilePool.Add(tile.id,tile.gameObject);
+				}else{
+					Tile obTile = ob.GetComponent<Tile>();
+
+					obTile.SwitchTileState(stage.tileType[j,i],spriteProvider);
+				}
+
+				x += dungeon.tileSize.x/100;
 				x = Mathf.Round(x*100)/100;
-				tile.gameObject.transform.parent = dungeon.transform;
+
+				index++;
 			}
 			y += dungeon.tileSize.y/100;
 			y = Mathf.Round(y*100)/100;
@@ -119,15 +199,15 @@ public class DungeonEditor : Editor {
 				height += rectangularity;
 			}
 
-			var x = Random.Range(0,(dungeon.size.x - width) / 2) * 2 + 1;
-			var y = Random.Range(0,(dungeon.size.y - height) / 2) * 2 + 1;
+			var x = Random.Range(0,(dungeon.size.x - width)-2);
+			var y = Random.Range(0,(dungeon.size.y - height)-2);
 			
 			Room room = new Room(new Vector2(x, y), width, height);
-			
+
 			bool overlaps = false;
-			/*
-			foreach (Room room in rooms) {
-				if (room.distanceTo(other) <= 0) {
+
+			foreach (Room other in rooms) {
+				if (room.Intersects(other)) {
 					overlaps = true;
 					break;
 				}
@@ -135,7 +215,7 @@ public class DungeonEditor : Editor {
 
 			
 			if (overlaps) continue;
-			*/
+
 			rooms.Add(room);
 			
 			//_startRegion();
@@ -154,7 +234,7 @@ public class DungeonEditor : Editor {
     {
         dungeon = target as Dungeon;
         Tools.current = Tool.View;
-
+		tilePool = new Dictionary<int, GameObject>();
         if (dungeon.texture2D)
         {
 

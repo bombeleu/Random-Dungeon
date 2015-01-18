@@ -3,8 +3,10 @@ using System.Collections;
 
 	public enum TileType
 	{
+		Empty,
 		Wall,
-		Ground,   
+		Ground, 
+		Test,
 	}
 
 

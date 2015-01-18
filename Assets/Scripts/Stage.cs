@@ -14,16 +14,19 @@ public class Stage  {
 	public void FillStage(){
 		for (int j = 0; j < size.y; j++) {
 			for (int i = 0; i < size.x; i++) {
-				tileType[j,i]= TileType.Wall;
+				tileType[j,i]= TileType.Empty;
 			}
 		}
 	}
 	public void AddRoom(Room room){
-		Debug.Log(room.position);
-		for (int i = (int)room.position.y; i < (int)room.position.y+room.height; i++) {
-			for (int j = (int)room.position.x; j < (int)room.position.x+room.width; j++) {
-				tileType[i,j] = TileType.Ground;
-			}
+
+		for (int i = 0; i < room.tilePositions.Count; i++) {
+			Vector2 pos = (Vector2)room.tilePositions[i];
+			tileType[(int)pos.x,(int)pos.y]= TileType.Test;
+				}
+		for (int j = 0; j < room.borderTilePosition.Count; j++) {
+			Vector2 pos = (Vector2)room.borderTilePosition[j];
+			tileType[(int)pos.x,(int)pos.y]= TileType.Test;
 		}
 		
 		
