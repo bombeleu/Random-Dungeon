@@ -22,11 +22,11 @@ public class Stage  {
 
 		for (int i = 0; i < room.tilePositions.Count; i++) {
 			Vector2 pos = (Vector2)room.tilePositions[i];
-			tileType[(int)pos.x,(int)pos.y]= TileType.Test;
+			tileType[(int)pos.x,(int)pos.y]= TileType.Ground;
 				}
 		for (int j = 0; j < room.borderTilePosition.Count; j++) {
 			Vector2 pos = (Vector2)room.borderTilePosition[j];
-			tileType[(int)pos.x,(int)pos.y]= TileType.Test;
+			tileType[(int)pos.x,(int)pos.y]= TileType.Wall;
 		}
 		
 		

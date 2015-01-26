@@ -66,7 +66,7 @@ public class Tile : MonoBehaviour {
 		case TileType.Empty:
 			name = "Empty "+id;
 			this.gameObject.name = name;  
-			renderer2D.sprite = spriteProvider.GetSprite("Empty");
+			renderer2D.sprite = spriteProvider.GetSprite("Wall");
 			this.tileSize = new Vector3(renderer2D.sprite.textureRect.width/100, renderer2D.sprite.textureRect.height/100); 
 			break;
 		}            

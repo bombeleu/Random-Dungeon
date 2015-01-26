@@ -7,6 +7,7 @@ using System.Collections;
 		Wall,
 		Ground, 
 		Test,
+		Undifine,
 	}
 
 

@@ -10,14 +10,19 @@ public class DungeonEditor : Editor {
     public Dungeon dungeon;
 	public List<Vector2> cells =  new List<Vector2>();
 	private SpriteProvider spriteProvider;
-   
+	public Vector2 lastMazeDir;
 	private Dictionary<int,GameObject> tilePool = new Dictionary<int, GameObject>();
 	public int windingPercent = 70;
 	public int numRooms = 10;
 	public int roomExtraSize = 2;
 	public ArrayList rooms = new ArrayList();
-
+	public Vector2 lastDir = new Vector2(-1,-1);
 	public Stage stage;
+	public List<Vector2> unmadeCells = new List<Vector2>();
+	public float _mazeStartX = 1;
+	public float _mazeStartY = 1;
+	public List<Vector2> _mazeCells;
+
 	public override void OnInspectorGUI(){
 
         GUILayout.BeginVertical();
@@ -71,8 +76,9 @@ public class DungeonEditor : Editor {
 		if (type == TileType.Ground){ 
 			type = TileType.Ground;
 
-		stage.tileType[(int)pos.x,(int)pos.y] = type;
+		
 		}
+		stage.tileType[(int)pos.x,(int)pos.y] = type;
 		//_regions[pos] = _currentRegion;
 	}
 	bool canCarve(Vector2 pos,Vector2 dir){
@@ -85,7 +91,7 @@ public class DungeonEditor : Editor {
 	}
 	void growMaze (Vector2 start)
 	{
-		 Vector2 lastDir = new Vector2(-1,-1);
+		 
 
 		
 		//_startRegion();
@@ -105,15 +111,15 @@ public class DungeonEditor : Editor {
 			//Debug.Log(1);
 			if(unmadeCells.Count !=0){
 				Vector2 dir;
-				Debug.Log(2);
-				Debug.Log(unmadeCells.Contains(lastDir));
+
+
 				if(unmadeCells.Contains(lastDir) && Random.Range(0,101)> windingPercent){
 					dir = lastDir;
 				}else{
 					dir = unmadeCells[Random.Range(0,unmadeCells.Count)];
 				}
-				carve(new Vector2(cell.x + dir.x,cell.y + dir.y),TileType.Ground);
-				carve(new Vector2(cell.x + dir.x + dir.x ,cell.y + dir.y + dir.y),TileType.Ground);
+				_carve(new Vector2(cell.x + dir.x,cell.y + dir.y),TileType.Undifine);
+				_carve(new Vector2(cell.x + dir.x + dir.x ,cell.y + dir.y + dir.y),TileType.Undifine);
 				cells.Add(new Vector2(dir.x+dir.x,dir.y+dir.y));
 				lastDir = dir;
 			}else{
@@ -130,8 +136,10 @@ public class DungeonEditor : Editor {
 
     void BuildDungeon()
     {
+		_mazeCells = new List<Vector2>();
 		rooms = new ArrayList();
-
+		cells =  new List<Vector2>();
+		unmadeCells = new List<Vector2>();
 		SpriteProvider spriteProvider = new SpriteProvider(AssetDatabase.GetAssetPath(dungeon.texture2D));
 		stage = new Stage(dungeon.size);
 		stage.FillStage();
@@ -143,14 +151,30 @@ public class DungeonEditor : Editor {
 
 		for (int i = 0; i < dungeon.size.y; i++) {
 			for (int j = 0; j < dungeon.size.x; j++) {
-				if(stage.tileType[j,i]!=TileType.Test)
-					continue;
-				growMaze(new Vector2(j,i));
+				if((j == 0)||(dungeon.size.x-1 == j)||(i == 0)||(dungeon.size.y-1== i)){
+					stage.tileType[j,i]=TileType.Wall;
+				}
+					//stage.tileType[j,i]!=TileType.Empty
+				//if(stage.tileType[j,i]!=TileType.Empty)
+				//	continue;
+				//growMaze(new Vector2(j,i));
 
 			}
 		}
+		/*
+		for (int ii = 1; ii < dungeon.size.y-1; ii++) {
+			for (int jj = 1; jj < dungeon.size.x-1; jj++) {
+				if(stage.tileType[jj,ii]!=TileType.Empty)
+					continue;
+				growMaze(new Vector2(jj,ii));
+				
+			}
+		}
+		*/
 
-
+		_startMaze();
+		_growMaze();
+		findOpenCells();
 
 
 
@@ -183,8 +207,97 @@ public class DungeonEditor : Editor {
 		}
 
 	}
-	void AddRooms(){
 
+	void _startMazeCell ()
+	{
+		Vector2 pos = new Vector2(_mazeStartX, _mazeStartY);
+		_mazeCells.Add(pos);
+		//_currentRegion++;
+		_carve(pos,TileType.Undifine);
+	}
+
+	bool _startMaze() {
+		if (_mazeStartY >= dungeon.size.y - 1) 
+			return false;
+		
+		// Find the next solid place to start a maze.
+		while (stage.tileType[(int)_mazeStartX,(int) _mazeStartY] != TileType.Empty) {
+			_mazeStartX += 2;
+			if (_mazeStartX >= dungeon.size.x - 1) {
+				_mazeStartX = 1;
+				_mazeStartY += 2;
+				
+				// Stop if we've scanned the whole dungeon.
+				if (_mazeStartY >= dungeon.size.y - 1) {
+					//_findConnectors();
+					return false;
+				}
+			}
+		}
+		
+		_startMazeCell();
+		return true;
+	}
+
+	bool _growMaze() { 
+
+		if (_mazeCells.Count <= 0)
+			return false;
+
+		while (_mazeCells.Count > 0) {
+
+			List<Vector2>  openDirs = new List<Vector2>();
+			Vector2 cell = _mazeCells[_mazeCells.Count-1];
+
+			Vector2[] dirs = Directions.cardinal;
+
+			for (int i = 0; i < dirs.Length; i++) {
+				if(cell.x + dirs[i].x * 3 >= stage.size.x ||  cell.x + dirs[i].x *3 <= 0 || cell.y + dirs[i].y * 3 >= stage.size.y || cell.y + dirs[i].y * 3<= 0)
+					continue;
+				if(stage.tileType[(int)(cell.x + dirs[i].x *2),(int)(cell.y + dirs[i].y * 2)]!= TileType.Empty )
+					continue;
+				openDirs.Add(dirs[i]);
+			}
+
+			if(openDirs.Count ==0){
+				_mazeCells.RemoveAt(_mazeCells.Count -1);
+				continue;
+			}
+
+			Vector2 dir;
+
+			if (openDirs.Contains(lastMazeDir) && Random.Range(0,101)> windingPercent) {
+				dir = lastMazeDir;
+			} else {
+				dir = openDirs[Random.Range(0, openDirs.Count-1)];
+			}
+
+			lastMazeDir = dir;
+
+			_carve(cell + dir,TileType.Undifine);
+			_carve(cell + dir * 2,TileType.Undifine);
+
+			_mazeCells.Add(cell + dir + dir);
+				
+
+		}
+		return false;
+
+	}
+	void findOpenCells() {
+		unmadeCells = new List<Vector2>();
+		for (int ii = 2; ii < dungeon.size.y-2; ii++) {
+			for (int jj = 2; jj < dungeon.size.x-2; jj++) {
+				if(stage.tileType[jj,ii]!=TileType.Wall && stage.tileType[jj,ii]!=TileType.Ground)
+					unmadeCells.Add(new Vector2(jj,ii));
+				
+				
+			}
+		}
+
+	}
+	void AddRooms(){
+		
 		for (int i = 0; i < numRooms; i++) {
 
 
@@ -242,4 +355,24 @@ public class DungeonEditor : Editor {
 
 		}
     }
+
+	void _carve (Vector2 pos,TileType type)
+	{
+		if(type == TileType.Empty){
+			if (pos.y < dungeon.size.y - 1 && stage.tileType[(int)pos.x,(int) pos.y + 1] != TileType.Empty) {
+
+				stage.tileType[(int)pos.x,(int) pos.y ] = TileType.Wall;
+			} else{
+				stage.tileType[(int)pos.x,(int) pos.y ] = TileType.Empty;
+			}
+			if (pos.y > 0 && stage.tileType[(int)pos.x,(int) pos.y - 1] == TileType.Empty) {
+				stage.tileType[(int)pos.x,(int) pos.y - 1] = TileType.Empty;
+			}
+		}else{
+			stage.tileType[(int)pos.x,(int) pos.y] = TileType.Ground;
+			if (pos.y > 0 && stage.tileType[(int)pos.x,(int) pos.y - 1] == TileType.Empty) {
+				stage.tileType[(int)pos.x,(int) pos.y - 1] = TileType.Wall;
+			}
+		}
+	}
 }
