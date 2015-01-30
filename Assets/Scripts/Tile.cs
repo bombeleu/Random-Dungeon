@@ -69,6 +69,18 @@ public class Tile : MonoBehaviour {
 			renderer2D.sprite = spriteProvider.GetSprite("Wall");
 			this.tileSize = new Vector3(renderer2D.sprite.textureRect.width/100, renderer2D.sprite.textureRect.height/100); 
 			break;
+		case TileType.OpenDoor:
+			name = "OpenDoor "+id;
+			this.gameObject.name = name;  
+			renderer2D.sprite = spriteProvider.GetSprite("OpenDoor");
+			this.tileSize = new Vector3(renderer2D.sprite.textureRect.width/100, renderer2D.sprite.textureRect.height/100); 
+			break;
+		case TileType.ClosedDoor:
+			name = "ClosedDoor"+id;
+			this.gameObject.name = name;  
+			renderer2D.sprite = spriteProvider.GetSprite("ClosedDoor");
+			this.tileSize = new Vector3(renderer2D.sprite.textureRect.width/100, renderer2D.sprite.textureRect.height/100); 
+			break;
 		}            
     }
 }

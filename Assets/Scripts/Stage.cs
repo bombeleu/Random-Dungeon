@@ -3,33 +3,32 @@ using System.Collections;
 
 public class Stage  {
 	
-	public Vector2 size;
+	public IntVector2 size;
 	
 	public TileType[,] tileType;
 	
-	public Stage(Vector2 size){
+	public Stage(IntVector2 size){
 		this.size = size;
-		tileType = new TileType[(int)size.x,(int)size.y];
+		tileType = new TileType[size.x,size.y];
 	}
-	public void FillStage(){
+	public void FillStage(TileType type){
 		for (int j = 0; j < size.y; j++) {
 			for (int i = 0; i < size.x; i++) {
-				tileType[j,i]= TileType.Empty;
+				tileType[j,i]= type;
 			}
 		}
 	}
 	public void AddRoom(Room room){
-
 		for (int i = 0; i < room.tilePositions.Count; i++) {
-			Vector2 pos = (Vector2)room.tilePositions[i];
-			tileType[(int)pos.x,(int)pos.y]= TileType.Ground;
-				}
-		for (int j = 0; j < room.borderTilePosition.Count; j++) {
-			Vector2 pos = (Vector2)room.borderTilePosition[j];
-			tileType[(int)pos.x,(int)pos.y]= TileType.Wall;
+			SetTile(room.tilePositions[i],TileType.Ground);
 		}
-		
-		
+	}
+	public void SetTile(IntVector2 pos,TileType type){
+		tileType[pos.x,pos.y]=type;
+	}
+
+	public TileType GetTile(IntVector2 pos){
+		return tileType[pos.x,pos.y];
 	}
 	
 }

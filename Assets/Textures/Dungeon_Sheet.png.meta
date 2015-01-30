@@ -7,12 +7,12 @@ TextureImporter:
     21300004: Dungeon_Sheet_2
     21300006: Dungeon_Sheet_3
     21300008: Dungeon_Sheet_4
-    21300010: Dungeon_Sheet_5
+    21300010: OpenDoor
     21300012: Dungeon_Sheet_6
     21300014: Dungeon_Sheet_7
     21300016: Dungeon_Sheet_8
     21300018: Dungeon_Sheet_9
-    21300020: Dungeon_Sheet_10
+    21300020: ClosedDoor
     21300022: Dungeon_Sheet_11
     21300024: Dungeon_Sheet_12
     21300026: Dungeon_Sheet_13
@@ -157,7 +157,7 @@ TextureImporter:
       alignment: 0
       pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: Dungeon_Sheet_5
+    - name: OpenDoor
       rect:
         serializedVersion: 2
         x: 80
@@ -207,7 +207,7 @@ TextureImporter:
       alignment: 0
       pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: Dungeon_Sheet_10
+    - name: ClosedDoor
       rect:
         serializedVersion: 2
         x: 160

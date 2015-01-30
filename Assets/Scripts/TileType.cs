@@ -7,6 +7,8 @@ using System.Collections;
 		Wall,
 		Ground, 
 		Test,
+		OpenDoor,
+		ClosedDoor,
 		Undifine,
 	}
 
