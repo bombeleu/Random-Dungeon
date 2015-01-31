@@ -5,7 +5,7 @@ public class Dungeon : MonoBehaviour {
     
     private static Dungeon dungeon;
 
-	public IntVector2 size = new IntVector2(15,15);
+	public IntVector2 size = new IntVector2(65,65);
     public Texture2D texture2D;
    
     public Vector2 tileSize = new Vector2();

@@ -13,7 +13,7 @@ public class DungeonEditor : Editor {
 
 	private Dictionary<int,GameObject> tilePool = new Dictionary<int, GameObject>();
 	public int windingPercent = 70;
-	public int numRooms = 10;
+	public int numRooms = 20;
 	public int roomExtraSize = 2;
 	public ArrayList rooms = new ArrayList();
 
@@ -25,7 +25,7 @@ public class DungeonEditor : Editor {
 	public Dictionary<IntVector2,int> _regions;
 	public int currentRegion = -1;
 
-
+	public List<IntVector2> connectors;
 
 	public override void OnInspectorGUI(){
 		GUILayout.BeginVertical();
@@ -127,6 +127,7 @@ public class DungeonEditor : Editor {
 
     void BuildDungeon()
     {
+		float startTime = Time.realtimeSinceStartup;
 		currentRegion = -1;
 		rooms = new ArrayList();
 		stage = new Stage(dungeon.size);
@@ -146,35 +147,12 @@ public class DungeonEditor : Editor {
 			}
 		}
 
-
-		/*
-		string debug =" | ";
-		for (int k = dungeon.size.y;  k > 0; k--) {
-			for (int ll = 0; ll < dungeon.size.x; ll++) {
-
-
-				if(_regions.ContainsKey(new IntVector2(ll,k))){
-					if(_regions[new IntVector2(ll, k)] <10)
-					debug +=  " "+ _regions[new IntVector2(ll, k)]+" | ";
-					else
-						debug +=  _regions[new IntVector2(ll, k)]+" | ";
-
-				}else{
-					debug += "W | ";
-				}
-			}
-			Debug.Log("ROW:"+k+" || "+debug);
-			debug =" | ";
-		}
-		*/
-		
-		
-
-
-
-
-
 		connectRegions();
+		removeDeadEnds();
+
+
+		float endTime = Time.realtimeSinceStartup;
+		Debug.Log ("End :"+ (endTime-startTime));
 
 		int index = 0;
 		float y = 0, x = 0;
@@ -185,7 +163,7 @@ public class DungeonEditor : Editor {
 				tilePool.TryGetValue(index,out ob);
 				if (ob==null)
 				{
-					Tile tile = Tile.CreateTile((TileType)stage.tileType[j,i],new Vector2(x, y),spriteProvider,index);
+					Tile tile = Tile.CreateTile((TileType)stage.tileType[j,i],new Vector2(x, y),spriteProvider,index,(connectors.Contains(new IntVector2(j, i))));
 					tile.gameObject.transform.parent = dungeon.transform;
 					tilePool.Add(tile.id,tile.gameObject);
 				}else{
@@ -211,8 +189,7 @@ public class DungeonEditor : Editor {
 
 	void AddRooms(){
 		
-		for (int i = 0; i < numRooms; i++) {
-
+		for (int i = 0; i < numRooms;) {
 			var size = Random.Range(1, 3 + roomExtraSize) * 2 + 1;
 			var rectangularity = Random.Range(0, 1 + size / 2) * 2;
 			var width = size;
@@ -239,6 +216,7 @@ public class DungeonEditor : Editor {
 
 			
 			if (overlaps) continue;
+			i++;
 			rooms.Add(room);
 			startRegion();
 			for (int j = y;j < y+ height; j++) {
@@ -273,10 +251,17 @@ public class DungeonEditor : Editor {
 			stage.SetTile(pos, TileType.ClosedDoor);
 		}
 	}
+
+
+
+
+
+
+	
 	
 	void connectRegions() {
 
-		// Find all of the tiles that can connect two (or more) regions.
+
 		Dictionary<IntVector2,List<int>> connectorRegions = new Dictionary<IntVector2, List<int>>();
 		for (int i = 1; i < dungeon.size.y-1; i++) {
 			for (int j = 1; j < dungeon.size.x-1; j++) {
@@ -285,89 +270,73 @@ public class DungeonEditor : Editor {
 				List<int> regions = new List<int>();
 
 				foreach (IntVector2 dir in Directions.cardinal) {
+					IntVector2 region = new IntVector2(pos.x+dir.x,pos.y+dir.y);
+					if(_regions.ContainsKey(region)){
+						if(!regions.Contains(_regions[region])){
+							regions.Add(_regions[region]);
+						}
 
-					int region;
-					_regions.TryGetValue(new IntVector2(pos.x+dir.x,pos.y+dir.y),out region);
-					if(region !=null){
-						regions.Add(region);
 					}
 
 				}
 				if(regions.Count < 2) continue;
-
+				regions.Sort();
 				connectorRegions[pos]=regions;
 
 			}
 		}
-		List<IntVector2> connectors = connectorRegions.Select(x=>x.Key).ToList();
+		connectors = connectorRegions.Select(x=>x.Key).ToList();
 
+		int openRegions = currentRegion;
+
+	
+
+
+		while (openRegions >= 1) {
+			IntVector2 connector = connectors[Random.Range(0, connectors.Count)];
+			addJunction(connector);
+			openRegions--;
 		
-		// Keep track of which regions have been merged. This maps an original
-		// region index to the one it has been merged to.
-		List<int> merged = new List<int>();
-		List<int> openRegions = new List<int>();
-		for (int i = 0; i <= currentRegion; i++) {
-			merged.Add(i);
-			openRegions.Add(i);
+			List<IntVector2> source = new List<IntVector2>();
+			for (int i = 0; i < connectors.Count; i++) {
+				if(connectorRegions[connector][0]==connectorRegions[connectors[i]][0]){
+					source.Add(connectors[i]);
+				}
+			}
+
+			foreach (IntVector2 item in source) {
+				if(connectors.Count >= 2)
+					connectors.Remove(item);
+			}
 		}
 
-		// Keep connecting regions until we're down to one.
-		while (openRegions.Count > 1) {
-			IntVector2 connector = connectors[Random.Range(0, connectors.Count)];
-			
-			// Carve the connection.
-			addJunction(connector);
-			// Merge the connected regions. We'll pick one region (arbitrarily) and
-			// map all of the other regions to its index.
-
-			List<int> regions = new List<int>();
-			regions.AddRange(connectorRegions[connector]);
-			regions.Add(merged[region]);
-
-			int dest = regions.ElementAt(0);
-			List<int> sources = regions.Skip(1).ToList();
-			
-			// Merge all of the affected regions. We have to look at *all* of the
-			// regions because other regions may have previously been merged with
-			// some of the ones we're merging now.
-			for (var i = 0; i <= currentRegion; i++) {
-				if (sources.Contains(merged[i])) {
-					merged[i] = dest;
-				}
-			}
-
-
-			
-			// The sources are no longer in use.
-
-			for (int i = 0; i < sources.Count; i++) {
-				if(openRegions.Contains(sources[i]))
-					openRegions.Remove(sources[i]);
-			}
-			List<IntVector2> keys = connectors;
-			for (int i = 0; i < keys.Count; i++) {
-				if(connector - keys[i] < 2){
-					//connectors.Remove(keys[i]);
-					continue;
-				}
-				List<int> regionss = connectorRegions[keys[i]];
-				regionss.Add(merged[region]);
-				if(regionss.Count > 1)
-					continue;
-
-				if(Random.Range(0,extraConnectorChance)==1){
-					addJunction(keys[i]);
-					//connectors.Remove(keys[i]);
-					continue;
-				}
-
-			}
-
-		
-}
-
-
 	}
-	
-	
+
+
+
+	void removeDeadEnds() {
+		bool done = false;
+
+		while (!done) {
+			done = true;
+			
+			for (int i = 1; i < dungeon.size.y-1; i++) {
+				for (int j = 1; j < dungeon.size.x-1; j++) {
+					IntVector2 pos = new IntVector2(j,i);
+					if(stage.GetTile(pos)==TileType.Wall) continue;
+				
+				int exits = 0;
+					foreach (IntVector2 dir in Directions.cardinal) {
+						if(stage.GetTile(pos+dir)!=TileType.Wall) exits++;
+				}
+				
+				if (exits != 1) continue;
+				done = false;
+					stage.SetTile(pos, TileType.Wall);
+				}}
+		}
+	}
+
+
+
 }

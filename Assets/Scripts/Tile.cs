@@ -8,7 +8,7 @@ public class Tile : MonoBehaviour {
 	public bool isTransparent;
 	TileType opensTo;
 	TileType closesTo;
-
+	public bool connector = false;
 
 
   
@@ -19,16 +19,21 @@ public class Tile : MonoBehaviour {
 
 
 
-    public void OnDrawGizmosSelected()
+    public void OnDrawGizmos()
     {
-        Gizmos.color = Color.red;
+		if (!connector)
+        	Gizmos.color = Color.red;
+		else 
+			Gizmos.color = Color.green;
         Gizmos.DrawWireCube(transform.position, tileSize);
     }    
 
-    public static Tile CreateTile(TileType tileType,Vector2 position,SpriteProvider spriteProvider,int id){
+    public static Tile CreateTile(TileType tileType,Vector2 position,SpriteProvider spriteProvider,int id,bool connector){
 		Tile tile = null;
 		GameObject go = new GameObject("Tile");
+
 		tile = go.AddComponent<Tile>();
+		tile.connector = connector;
 		tile.id = id;
 		tile.gameObject.transform.position = position;		
 		tileType = tileType;   
