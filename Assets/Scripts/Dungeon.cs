@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Assets.Scripts;
 
 public class Dungeon : MonoBehaviour {
     
@@ -10,7 +11,7 @@ public class Dungeon : MonoBehaviour {
    
     public Vector2 tileSize = new Vector2();
     public Vector2 gridSize;
-    
+	public Level level = new Level();
 
 
 		

@@ -18,22 +18,14 @@ public class Tile : MonoBehaviour {
     public TileType tileType;
 
 
+ 
 
-    public void OnDrawGizmos()
-    {
-		if (!connector)
-        	Gizmos.color = Color.red;
-		else 
-			Gizmos.color = Color.green;
-        Gizmos.DrawWireCube(transform.position, tileSize);
-    }    
-
-    public static Tile CreateTile(TileType tileType,Vector2 position,SpriteProvider spriteProvider,int id,bool connector){
+    public static Tile CreateTile(TileType tileType,Vector2 position,SpriteProvider spriteProvider,int id){
 		Tile tile = null;
 		GameObject go = new GameObject("Tile");
 
 		tile = go.AddComponent<Tile>();
-		tile.connector = connector;
+
 		tile.id = id;
 		tile.gameObject.transform.position = position;		
 		tileType = tileType;   
