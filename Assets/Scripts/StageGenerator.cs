@@ -20,8 +20,9 @@ namespace Assets.Scripts
 				private int currentRegion;
 				private List<IntVector2> connectors;
 				private Dictionary<IntVector2,int> _regions;
-
-
+			
+		float extraConnectorChance = 20000;
+				
 				public StageGenerator (Level level)
 				{
 						this.level = level;
@@ -45,7 +46,7 @@ namespace Assets.Scripts
 					reset ();
 					addRooms ();
 					findOpenGrowMaze ();
-					connectRegions ();
+					_connectRegions ();
 					removeDeadEnds ();
 					return stage;
 				}
@@ -198,6 +199,98 @@ namespace Assets.Scripts
 			
 				}
 
+		private void _connectRegions ()
+		{
+			Dictionary<IntVector2,List<int>> connectorRegions = new Dictionary<IntVector2, List<int>> ();
+			for (int i = 1; i < stage.size.y-1; i++) {
+				for (int j = 1; j < stage.size.x-1; j++) {
+					IntVector2 pos = new IntVector2 (j, i);
+					if (stage.GetTile (pos) != TileType.Wall)
+						continue;
+					List<int> regions = new List<int> ();
+					
+					foreach (IntVector2 dir in Directions.cardinal) {
+						IntVector2 region = new IntVector2 (pos.x + dir.x, pos.y + dir.y);
+						if (_regions.ContainsKey (region)) {
+							if (!regions.Contains (_regions [region])) {
+								regions.Add (_regions [region]);
+							}
+							
+						}
+						
+					}
+					if (regions.Count < 2)
+						continue;
+
+					connectorRegions [pos] = regions;
+					
+				}
+			}
+			connectors = connectorRegions.Select (x => x.Key).ToList ();
+			int[] merged = new int[currentRegion+1];
+			List<int> openRegions = new List<int>();
+
+			for (int i = 0; i <= currentRegion; i++) {
+				merged[i]=i;
+				openRegions.Add(i);
+						}
+
+
+
+			while (openRegions.Count > 1) {
+				IntVector2 connector = connectors [Random.Range (0, connectors.Count)];
+				addJunction (connector);
+
+				List<int> regions = connectorRegions[connector].Select((region)=>merged[region]).ToList();
+
+				int dest = regions.First();
+
+				List<int> sources = regions.Skip(1).ToList();
+
+				for (int i = 0; i <= currentRegion; i++) {
+					if(sources.Contains(merged[i])){
+						merged[i] = dest;
+					}
+				}
+
+
+				Debug.Log(openRegions.Count);
+				for (int i = 0; i < sources.Count;i++){
+					openRegions.Remove(sources[i]);
+
+				}
+
+
+				for(int ii = 0; ii < connectors.Count; ii++) {
+
+					IntVector2 pos = connectors[ii];
+
+						if(connector - pos < 2){
+							connectors.Remove(pos);
+							continue;
+						}
+
+						List<int> regionss = connectorRegions[pos].Select((region) => merged[region]).ToList();
+
+						if(regionss.Count > 1)continue;
+
+					if(Random.Range(0,extraConnectorChance)==extraConnectorChance){ 
+						//addJunction(pos);
+
+					}
+					connectors.Remove(pos);
+
+				}
+
+
+
+
+
+			}
+			
+		}
+
+				
 				private void carve (IntVector2 pos, TileType type)
 				{
 						stage.SetTile (pos, type);

@@ -17,8 +17,6 @@ public class Dungeon : MonoBehaviour {
 		
     void OnDrawGizmosSelected()
     {
-        var pos = this.transform.position;
-
         if (texture2D)
         {            
             Gizmos.color = Color.grey;
