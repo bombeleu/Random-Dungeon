@@ -6,14 +6,14 @@ public class Dungeon : MonoBehaviour {
     
     private static Dungeon dungeon;
 
-	public IntVector2 size = new IntVector2(65,65);
+	public Vector2 size = new Vector2(65,65);
     public Texture2D texture2D;
    
     public Vector2 tileSize = new Vector2();
     public Vector2 gridSize;
 	public Level level = new Level();
 
-
+	public Stage stage;
 		
     void OnDrawGizmosSelected()
     {

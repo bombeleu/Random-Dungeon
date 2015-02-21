@@ -17,7 +17,7 @@ public class DungeonEditor : Editor {
 
 	public override void OnInspectorGUI(){
 		GUILayout.BeginVertical();
-		EditorGUILayout.Vector2Field("Dungeon Size: ", new Vector2((int)dungeon.size.x,(int)dungeon.size.y));    
+		EditorGUILayout.Vector2Field("Dungeon Size: ", dungeon.size);    
 		GUILayout.EndVertical();
 
         GUILayout.BeginHorizontal();
@@ -82,7 +82,7 @@ public class DungeonEditor : Editor {
 		StageGenerator generator = new StageGenerator(level);
 		float startTime = Time.realtimeSinceStartup;
 		Stage stage = generator.GenerateStage();
-		
+		dungeon.stage = stage;
 		
 		float endTime = Time.realtimeSinceStartup;
 		Debug.Log ("End :"+ (endTime-startTime));

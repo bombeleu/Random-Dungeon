@@ -1,4 +1,4 @@
-﻿
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,7 +7,14 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-		public class StageGenerator
+	public static class Extensions
+	{
+		public static HashSet<T> ToHashSet<T>(this IEnumerable<T> source)
+		{
+			return new HashSet<T>(source);
+		}
+	}
+	public class StageGenerator
 		{
 				private Level level;
 				private Stage stage;
@@ -21,7 +28,7 @@ namespace Assets.Scripts
 				private List<IntVector2> connectors;
 				private Dictionary<IntVector2,int> _regions;
 			
-		float extraConnectorChance = 20000;
+				private float extraConnectorChance;
 				
 				public StageGenerator (Level level)
 				{
@@ -35,6 +42,7 @@ namespace Assets.Scripts
 					windingPercent = level.windingPercent;
 					numRooms = level.roomCount;
 					roomExtraSize = level.roomExtraSize;
+					extraConnectorChance = level.extraConnectorChance;
 					stageSize = level.levelSize;
 					stage = new Stage (stageSize);
 					stage.FillStage (TileType.Wall);
@@ -48,6 +56,9 @@ namespace Assets.Scripts
 					findOpenGrowMaze ();
 					_connectRegions ();
 					removeDeadEnds ();
+
+					
+
 					return stage;
 				}
 
@@ -63,7 +74,7 @@ namespace Assets.Scripts
 						while (cells.Count != 0) {
 								IntVector2 cell = cells [cells.Count - 1];
 								List<IntVector2> openDirs = new List<IntVector2> ();
-								IntVector2[] directions = Directions.cardinal;
+								IntVector2[] directions = Direction.CARDINAL;
 								for (int i = 0; i < directions.Length; i++) {
 										if (canCarve (cell, directions [i]))
 												openDirs.Add (directions [i]);
@@ -158,7 +169,7 @@ namespace Assets.Scripts
 												continue;
 										List<int> regions = new List<int> ();
 					
-										foreach (IntVector2 dir in Directions.cardinal) {
+										foreach (IntVector2 dir in Direction.CARDINAL) {
 												IntVector2 region = new IntVector2 (pos.x + dir.x, pos.y + dir.y);
 												if (_regions.ContainsKey (region)) {
 														if (!regions.Contains (_regions [region])) {
@@ -201,15 +212,15 @@ namespace Assets.Scripts
 
 		private void _connectRegions ()
 		{
-			Dictionary<IntVector2,List<int>> connectorRegions = new Dictionary<IntVector2, List<int>> ();
+			Dictionary<IntVector2,HashSet<int>> connectorRegions = new Dictionary<IntVector2, HashSet<int>> ();
 			for (int i = 1; i < stage.size.y-1; i++) {
 				for (int j = 1; j < stage.size.x-1; j++) {
 					IntVector2 pos = new IntVector2 (j, i);
 					if (stage.GetTile (pos) != TileType.Wall)
 						continue;
-					List<int> regions = new List<int> ();
+					HashSet<int> regions = new HashSet<int> ();
 					
-					foreach (IntVector2 dir in Directions.cardinal) {
+					foreach (IntVector2 dir in Direction.CARDINAL) {
 						IntVector2 region = new IntVector2 (pos.x + dir.x, pos.y + dir.y);
 						if (_regions.ContainsKey (region)) {
 							if (!regions.Contains (_regions [region])) {
@@ -228,7 +239,7 @@ namespace Assets.Scripts
 			}
 			connectors = connectorRegions.Select (x => x.Key).ToList ();
 			int[] merged = new int[currentRegion+1];
-			List<int> openRegions = new List<int>();
+			HashSet<int> openRegions = new HashSet<int>();
 
 			for (int i = 0; i <= currentRegion; i++) {
 				merged[i]=i;
@@ -241,8 +252,7 @@ namespace Assets.Scripts
 				IntVector2 connector = connectors [Random.Range (0, connectors.Count)];
 				addJunction (connector);
 
-				List<int> regions = connectorRegions[connector].Select((region)=>merged[region]).ToList();
-
+				HashSet<int> regions = connectorRegions[connector].Select((region)=>merged[region]).ToHashSet();
 				int dest = regions.First();
 
 				List<int> sources = regions.Skip(1).ToList();
@@ -253,8 +263,6 @@ namespace Assets.Scripts
 					}
 				}
 
-
-				Debug.Log(openRegions.Count);
 				for (int i = 0; i < sources.Count;i++){
 					openRegions.Remove(sources[i]);
 
@@ -265,20 +273,21 @@ namespace Assets.Scripts
 
 					IntVector2 pos = connectors[ii];
 
+						
 						if(connector - pos < 2){
 							connectors.Remove(pos);
 							continue;
 						}
 
-						List<int> regionss = connectorRegions[pos].Select((region) => merged[region]).ToList();
+						HashSet<int> regionss = connectorRegions[pos].Select((region) => merged[region]).ToHashSet();
 
 						if(regionss.Count > 1)continue;
 
-					if(Random.Range(0,extraConnectorChance)==extraConnectorChance){ 
-						//addJunction(pos);
+						if(Random.Range(0,extraConnectorChance)==extraConnectorChance){ 
+							//addJunction(pos);
 
-					}
-					connectors.Remove(pos);
+						}
+						connectors.Remove(pos);
 
 				}
 
@@ -333,7 +342,7 @@ namespace Assets.Scripts
 														continue;
 						
 												int exits = 0;
-												foreach (IntVector2 dir in Directions.cardinal) {
+												foreach (IntVector2 dir in Direction.CARDINAL) {
 														if (stage.GetTile (pos + dir) != TileType.Wall)
 																exits++;
 												}

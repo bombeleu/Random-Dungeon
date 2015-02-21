@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using System;
 public struct IntVector2 {
 	public int x, y;
 	public float magnitude;
@@ -43,6 +43,26 @@ public struct IntVector2 {
 	public static bool operator >(IntVector2 a, int b) {
 		
 		return a.lengthSqrt > b * b;
+	}
+	public static bool operator ==(IntVector2 a, IntVector2 b) {
+		
+		return a.x == b.x && a.y == b.y;
+	}
+	public static bool operator !=(IntVector2 a, IntVector2 b) {
+		
+		return a.x != b.x || a.y != b.y;
+	}
+	public override bool Equals(object obj)
+	{
+		IntVector2 other = (IntVector2)obj;
+		return x == other.x && y == other.y;
+	}
+	public override string ToString()
+	{
+		return String.Format("<{0},{1}>",x,y);
+	}
+	public override int GetHashCode() {
+		return (x+y).GetHashCode();
 	}
 }
 

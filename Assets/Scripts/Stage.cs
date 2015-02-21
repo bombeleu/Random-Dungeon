@@ -1,11 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections;
-
+using System.Collections.Generic;
 public class Stage  {
-	
+
+	public Hero hero;
+
 	public IntVector2 size;
 	
 	public TileType[,] tileType;
+
+	public Dictionary<IntVector2,Actor> actors = new Dictionary<IntVector2, Actor>();
 	
 	public Stage(IntVector2 size){
 		this.size = size;
@@ -30,5 +34,19 @@ public class Stage  {
 	public TileType GetTile(IntVector2 pos){
 		return tileType[pos.x,pos.y];
 	}
-	
+	public IntVector2 findOpenTile() {
+		while (true) {
+			for (int j = 0; j < size.y; j++) {
+				for (int i = 0; i < size.x; i++) {
+					if(tileType[j,i]== TileType.Wall)continue;
+					IntVector2 pos = new IntVector2(j,i);
+					if(actors.ContainsKey(pos))continue;
+					return pos;
+				}
+			}
+
+		}
+	}
+
 }
+
